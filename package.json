@@ -1,0 +1,54 @@
+{
+  "name": "feathers-kubernetes",
+  "description": "Distribute your Feathers services as microservices",
+  "version": "0.0.1",
+  "homepage": "https://github.com/dekelev/feathers-kubernetes",
+  "main": "lib/",
+  "keywords": [
+    "feathers",
+    "kubernetes",
+    "feathers-plugin",
+    "feathers-kubernetes"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dekelev/feathers-kubernetes.git"
+  },
+  "author": {
+    "name": "Dekel Barzilay",
+    "email": "dekelev@gmail.com"
+  },
+  "contributors": [],
+  "bugs": {
+    "url": "https://github.com/dekelev/feathers-kubernetes/issues"
+  },
+  "engines": {
+    "node": ">= 8"
+  },
+  "scripts": {
+    "publish": "git push origin --tags && npm run changelog && git push origin",
+    "release:patch": "npm version patch && npm publish",
+    "release:minor": "npm version minor && npm publish",
+    "release:major": "npm version major && npm publish",
+    "changelog": "github_changelog_generator && git add CHANGELOG.md && git commit -am \"Updating changelog\"",
+    "lint": "semistandard --fix lib/**/*.js test/**/*.js --config",
+    "test": "echo 'no tests for now'"
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "dependencies": {
+    "@feathersjs/errors": "^4.5.7",
+    "axios": "^0.19.2",
+    "debug": "^4.1.1"
+  },
+  "devDependencies": {
+    "semistandard": "^14.2.3"
+  },
+  "semistandard": {
+    "env": [
+      "mocha"
+    ]
+  }
+}
