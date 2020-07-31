@@ -41,7 +41,6 @@
   "dependencies": {
     "@feathersjs/errors": "^4.5.7",
     "axios": "^0.19.2",
-    "axios-debug-log": "^0.8.0",
     "debug": "^4.1.1",
     "lodash": "^4.17.19"
   },
