@@ -1,19 +1,21 @@
 {
-  "name": "feathers-kubernetes",
+  "name": "feathers-http-distributed",
   "description": "Distribute your Feathers services as microservices",
-  "version": "0.0.2",
-  "homepage": "https://github.com/dekelev/feathers-kubernetes",
+  "version": "0.1.0",
+  "homepage": "https://github.com/dekelev/feathers-http-distributed",
   "main": "lib/",
   "keywords": [
     "feathers",
+    "feathersjs",
+    "distributed",
+    "http",
     "kubernetes",
-    "feathers-plugin",
-    "feathers-kubernetes"
+    "microservices"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git://github.com/dekelev/feathers-kubernetes.git"
+    "url": "git://github.com/dekelev/feathers-http-distributed.git"
   },
   "author": {
     "name": "Dekel Barzilay",
@@ -21,7 +23,7 @@
   },
   "contributors": [],
   "bugs": {
-    "url": "https://github.com/dekelev/feathers-kubernetes/issues"
+    "url": "https://github.com/dekelev/feathers-http-distributed/issues"
   },
   "engines": {
     "node": ">= 8"
