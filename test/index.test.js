@@ -3,6 +3,7 @@
 const { expect } = require('chai');
 const assert = require('assert');
 const feathers = require('@feathersjs/feathers');
+const errors = require('@feathersjs/errors');
 const memory = require('feathers-memory');
 const axios = require('axios');
 const MockAdapter = require('axios-mock-adapter');
@@ -10,7 +11,6 @@ const mock = new MockAdapter(axios);
 const distributed = require('../lib');
 const {
   handleInternalRequest,
-  stripSlashes,
   pathToHost,
   idToString
 } = require('../lib/utils');
@@ -24,20 +24,21 @@ const {
   INTERNAL_REQUEST_HEADER
 } = require('../lib/constants');
 
-const DEFAULT_HOST = 'localhost';
+const DEFAULT_HOST = 'undefined';
 
 describe('Feathers Cassandra service', () => {
   let app;
 
   before(async () => {
     app = feathers()
-      .configure(app => distributed(app)({
-        host: DEFAULT_HOST
-      }));
+      .configure(app => distributed(app)());
 
     app.use('/local', memory({}));
 
-    mock.onGet('http://localhost:80/remote').reply(function (config) {
+    const path = 'remote';
+    const id = 1;
+
+    mock.onGet(`http://${DEFAULT_HOST}:80/${path}`).reply(function (config) {
       return [
         200,
         {
@@ -47,7 +48,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onGet('http://localhost:80/remote/1').reply(function (config) {
+    mock.onGet(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
       return [
         200,
         {
@@ -57,16 +58,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onGet('http://localhost:80/remote/timeout').reply(function (config) {
-      return [
-        200,
-        {
-          config
-        }
-      ];
-    });
-
-    mock.onPost('http://localhost:80/remote').reply(function (config) {
+    mock.onPost(`http://${DEFAULT_HOST}:80/${path}`).reply(function (config) {
       return [
         201,
         {
@@ -76,7 +68,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onPut('http://localhost:80/remote/1').reply(function (config) {
+    mock.onPut(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
       return [
         200,
         {
@@ -86,7 +78,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onPatch('http://localhost:80/remote/1').reply(function (config) {
+    mock.onPatch(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
       return [
         200,
         {
@@ -96,7 +88,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onDelete('http://localhost:80/remote/1').reply(function (config) {
+    mock.onDelete(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
       return [
         200,
         {
@@ -211,8 +203,10 @@ describe('Feathers Cassandra service', () => {
       expect(res).to.be.ok;
       expect(res.remove).to.equal(true);
     });
+  });
 
-    describe('Request headers', () => {
+  describe('Request', () => {
+    describe('headers', () => {
       it('sends JSON Content-Type request header', async () => {
         const service = app.service('remote');
 
@@ -231,6 +225,21 @@ describe('Feathers Cassandra service', () => {
         expect(JSON.parse(res.config.headers[INTERNAL_REQUEST_HEADER]).test).to.equal(true);
       });
 
+      it('sends custom internal request header', async () => {
+        const internalRequestHeader = 'custom';
+        const app = feathers()
+          .configure(app => distributed(app)({
+            internalRequestHeader
+          }));
+
+        const service = app.service('remote');
+
+        const res = await service.find({ test: true });
+
+        expect(res).to.be.ok;
+        expect(JSON.parse(res.config.headers[internalRequestHeader]).test).to.equal(true);
+      });
+
       it('sends X-Service request headers', async () => {
         const service = app.service('remote');
 
@@ -240,6 +249,32 @@ describe('Feathers Cassandra service', () => {
         expect(res.config.headers[SERVICE_PROTOCOL_HEADER]).to.equal(DEFAULT_PROTOCOL);
         expect(res.config.headers[SERVICE_HOST_HEADER]).to.equal(DEFAULT_HOST);
         expect(res.config.headers[SERVICE_PORT_HEADER]).to.equal(DEFAULT_PORT);
+      });
+
+      it('sends X-Service request headers when overriding protocol, host & port', async () => {
+        mock.onGet('https://remote-service.local:8443/remote').reply(function (config) {
+          return [
+            200,
+            {
+              config
+            }
+          ];
+        });
+
+        const service = app.service('remote');
+        const params = {
+          protocol: 'https',
+          host: 'remote',
+          dnsSuffix: '-service.local',
+          port: 8443
+        };
+
+        const res = await service.find(params);
+
+        expect(res).to.be.ok;
+        expect(res.config.headers[SERVICE_PROTOCOL_HEADER]).to.equal(params.protocol);
+        expect(res.config.headers[SERVICE_HOST_HEADER]).to.equal(params.host + params.dnsSuffix);
+        expect(res.config.headers[SERVICE_PORT_HEADER]).to.equal(params.port);
       });
 
       it('sends custom request header', async () => {
@@ -256,7 +291,274 @@ describe('Feathers Cassandra service', () => {
       });
     });
 
-    describe('Request timeout', () => {
+    describe('params', () => {
+      it('without params', async () => {
+        const service = app.service('remote');
+
+        const res = await service.find();
+
+        expect(res).to.be.ok;
+        expect(res.config.headers[INTERNAL_REQUEST_HEADER]).to.equal('{}');
+      });
+
+      it('with params', async () => {
+        const service = app.service('remote');
+
+        const res = await service.find({ a: 1, b: 2 });
+
+        expect(res).to.be.ok;
+        expect(JSON.parse(res.config.headers[INTERNAL_REQUEST_HEADER]).a).to.equal(1);
+        expect(JSON.parse(res.config.headers[INTERNAL_REQUEST_HEADER]).b).to.equal(2);
+      });
+
+      it('with excluded param', async () => {
+        const app = feathers()
+          .configure(app => distributed(app)({
+            excludeParams: [
+              'excluded'
+            ]
+          }));
+
+        const service = app.service('remote');
+
+        const res = await service.find({ excluded: true, a: 1, b: 2 });
+
+        expect(res).to.be.ok;
+        expect(JSON.parse(res.config.headers[INTERNAL_REQUEST_HEADER]).excluded).to.be.undefined;
+        expect(JSON.parse(res.config.headers[INTERNAL_REQUEST_HEADER]).a).to.equal(1);
+        expect(JSON.parse(res.config.headers[INTERNAL_REQUEST_HEADER]).b).to.equal(2);
+      });
+    });
+
+    describe('protocol', () => {
+      it('with custom protocol', async () => {
+        const protocol = 'https';
+
+        mock.onGet(`${protocol}://${DEFAULT_HOST}:80/remote`).reply(function (config) {
+          return [
+            200,
+            {
+              protocol: true,
+              config
+            }
+          ];
+        });
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            protocol
+          }));
+
+        const service = app.service('remote');
+
+        const res = await service.find({});
+
+        expect(res).to.be.ok;
+        expect(res.protocol).to.equal(true);
+      });
+    });
+
+    describe('host', () => {
+      it('with default host', async () => {
+        const host = 'localhost';
+
+        mock.onGet(`http://${host}:80/remote`).reply(function (config) {
+          return [
+            200,
+            {
+              host: true,
+              config
+            }
+          ];
+        });
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            host
+          }));
+
+        const service = app.service('remote');
+
+        const res = await service.find({});
+
+        expect(res).to.be.ok;
+        expect(res.host).to.equal(true);
+      });
+
+      it('with pathToHost', async () => {
+        const path = 'v1-test/service';
+        const host = 'v1-test-service';
+
+        mock.onGet(`http://${host}:80/${path}`).reply(function (config) {
+          return [
+            200,
+            {
+              pathToHost: true,
+              config
+            }
+          ];
+        });
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            pathToHost: true
+          }));
+
+        const service = app.service(path);
+
+        const res = await service.find({});
+
+        expect(res).to.be.ok;
+        expect(res.pathToHost).to.equal(true);
+      });
+
+      it('with custom pathToHost', async () => {
+        const path = 'v1-test/service';
+        const host = 'v1_test_service';
+
+        mock.onGet(`http://${host}:80/${path}`).reply(function (config) {
+          return [
+            200,
+            {
+              pathToHost: 'custom',
+              config
+            }
+          ];
+        });
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            pathToHost: path => path.replace(/[^a-z0-9]/gi, '_')
+          }));
+
+        const service = app.service(path);
+
+        const res = await service.find({});
+
+        expect(res).to.be.ok;
+        expect(res.pathToHost).to.equal('custom');
+      });
+
+      it('with DNS suffix', async () => {
+        const dnsSuffix = '-svc.local';
+
+        mock.onGet(`http://${DEFAULT_HOST}${dnsSuffix}:80/remote`).reply(function (config) {
+          return [
+            200,
+            {
+              dnsSuffix: true,
+              config
+            }
+          ];
+        });
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            dnsSuffix
+          }));
+
+        const service = app.service('remote');
+
+        const res = await service.find({});
+
+        expect(res).to.be.ok;
+        expect(res.dnsSuffix).to.equal(true);
+      });
+
+      it('with DNS suffix option & param', async () => {
+        const dnsSuffixOption = '-svc.local';
+        const dnsSuffixParam = '.local';
+
+        mock.onGet(`http://${DEFAULT_HOST}${dnsSuffixParam}:80/remote`).reply(function (config) {
+          return [
+            200,
+            {
+              dnsSuffix: true,
+              config
+            }
+          ];
+        });
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            dnsSuffix: dnsSuffixOption
+          }));
+
+        const service = app.service('remote');
+
+        const res = await service.find({
+          dnsSuffix: dnsSuffixParam
+        });
+
+        expect(res).to.be.ok;
+        expect(res.dnsSuffix).to.equal(true);
+      });
+    });
+
+    describe('port', () => {
+      it('with custom port', async () => {
+        const port = 8000;
+
+        mock.onGet(`http://${DEFAULT_HOST}:${port}/remote`).reply(function (config) {
+          return [
+            200,
+            {
+              port: true,
+              config
+            }
+          ];
+        });
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            port
+          }));
+
+        const service = app.service('remote');
+
+        const res = await service.find({});
+
+        expect(res).to.be.ok;
+        expect(res.port).to.equal(true);
+      });
+    });
+
+    describe('proxy', () => {
+      it('request', async () => {
+        const proxy = {
+          protocol: 'https',
+          host: 'proxy',
+          port: 8000
+        };
+
+        mock.onGet(`${proxy.protocol}://${proxy.host}:${proxy.port}/remote`).reply(function (config) {
+          return [
+            200,
+            {
+              proxy: true,
+              config
+            }
+          ];
+        });
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            proxy
+          }));
+
+        const service = app.service('remote');
+
+        const res = await service.find({});
+
+        expect(res).to.be.ok;
+        expect(res.proxy).to.equal(true);
+        expect(res.config.headers[SERVICE_PROTOCOL_HEADER]).to.equal(DEFAULT_PROTOCOL);
+        expect(res.config.headers[SERVICE_HOST_HEADER]).to.equal(DEFAULT_HOST);
+        expect(res.config.headers[SERVICE_PORT_HEADER]).to.equal(DEFAULT_PORT);
+      });
+    });
+
+    describe('timeout', () => {
       it('default timeout', async () => {
         const service = app.service('remote');
 
@@ -264,6 +566,22 @@ describe('Feathers Cassandra service', () => {
 
         expect(res).to.be.ok;
         expect(res.config.timeout).to.equal(DEFAULT_TIMEOUT);
+      });
+
+      it('timeout option', async () => {
+        const timeout = 1000;
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            timeout
+          }));
+
+        const service = app.service('remote');
+
+        const res = await service.find({});
+
+        expect(res).to.be.ok;
+        expect(res.config.timeout).to.equal(timeout);
       });
 
       it('timeout param', async () => {
@@ -274,156 +592,393 @@ describe('Feathers Cassandra service', () => {
         expect(res).to.be.ok;
         expect(res.config.timeout).to.equal(2000);
       });
+
+      it('timeout option & param', async () => {
+        const timeoutOption = 1000;
+        const timeoutParam = 2000;
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            timeout: timeoutOption
+          }));
+
+        const service = app.service('remote');
+
+        const res = await service.find({ timeout: timeoutParam });
+
+        expect(res).to.be.ok;
+        expect(res.config.timeout).to.equal(timeoutParam);
+      });
+    });
+  });
+
+  describe('Error handler', () => {
+    it('network error', async () => {
+      const errMsg = 'Network Error';
+      const path = 'remote-error';
+
+      mock.onGet(`http://${DEFAULT_HOST}:80/${path}`).networkError();
+
+      const service = app.service(path);
+
+      await service.find({}).then(() => {
+        throw new Error('Should never get here');
+      }).catch(function (error) {
+        expect(error).to.be.ok;
+        expect(error instanceof errors.BadGateway).to.be.ok;
+        expect(error.message).to.equal(errMsg);
+      });
     });
 
-    describe('Utils', () => {
-      describe('handleInternalRequest', () => {
-        it('ignore external call', async () => {
-          const req = {
-            headers: [],
-            feathers: {
-              provider: 'rest',
-              headers: []
-            }
-          };
+    it('timeout error', async () => {
+      const errName = 'GatewayTimeout';
+      const errCode = 504;
+      const errMsg = 'timeout of 0ms exceeded';
+      const path = 'remote-timeout-error';
 
-          const fromRemote = handleInternalRequest(req);
+      mock.onGet(`http://${DEFAULT_HOST}:80/${path}`).timeout();
 
-          expect(fromRemote).to.equal(false);
+      const service = app.service(path);
+
+      await service.find({}).then(() => {
+        throw new Error('Should never get here');
+      }).catch(function (error) {
+        expect(error).to.be.ok;
+        expect(error.name).to.equal(errName);
+        expect(error.code).to.equal(errCode);
+        expect(error.message).to.equal(errMsg);
+      });
+    });
+
+    it('not-found error', async () => {
+      const errCode = 404;
+      const errMsg = 'Request failed with status code 404';
+      const path = 'remote-not-found-error';
+
+      const service = app.service(path);
+
+      await service.find({}).then(() => {
+        throw new Error('Should never get here');
+      }).catch(function (error) {
+        expect(error).to.be.ok;
+        expect(error instanceof errors.NotFound).to.be.ok;
+        expect(error.code).to.equal(errCode);
+        expect(error.message).to.equal(errMsg);
+      });
+    });
+
+    it('client error', async () => {
+      const errCode = 400;
+      const errMsg = 'client error';
+      const path = 'remote-client-error';
+
+      mock.onGet(`http://${DEFAULT_HOST}:80/${path}`).reply(function (config) {
+        return [
+          errCode,
+          new errors.BadRequest(errMsg)
+        ];
+      });
+
+      const service = app.service(path);
+
+      await service.find({}).then(() => {
+        throw new Error('Should never get here');
+      }).catch(function (error) {
+        expect(error).to.be.ok;
+        expect(error instanceof errors.BadRequest).to.be.ok;
+        expect(error.code).to.equal(errCode);
+        expect(error.message).to.equal(errMsg);
+      });
+    });
+
+    it('server error', async () => {
+      const errCode = 500;
+      const errMsg = 'server error';
+      const path = 'remote-server-error';
+
+      mock.onGet(`http://${DEFAULT_HOST}:80/${path}`).reply(function (config) {
+        return [
+          errCode,
+          new errors.GeneralError(errMsg)
+        ];
+      });
+
+      const service = app.service(path);
+
+      await service.find({}).then(() => {
+        throw new Error('Should never get here');
+      }).catch(function (error) {
+        expect(error).to.be.ok;
+        expect(error instanceof errors.GeneralError).to.be.ok;
+        expect(error.code).to.equal(errCode);
+        expect(error.message).to.equal(errMsg);
+      });
+    });
+
+    describe('service methods', () => {
+      it('find', async () => {
+        const errCode = 500;
+        const errMsg = 'server find error';
+        const path = 'remote-server-find-error';
+
+        mock.onGet(`http://${DEFAULT_HOST}:80/${path}`).reply(function (config) {
+          return [
+            errCode,
+            new errors.GeneralError(errMsg)
+          ];
         });
 
-        it('internal call from remote service', async () => {
-          const service = app.service('remote');
+        const service = app.service(path);
 
-          const res = await service.find({ a: 1, b: 2 });
+        await service.find({}).then(() => {
+          throw new Error('Should never get here');
+        }).catch(function (error) {
+          expect(error).to.be.ok;
+          expect(error instanceof errors.GeneralError).to.be.ok;
+          expect(error.code).to.equal(errCode);
+          expect(error.message).to.equal(errMsg);
+        });
+      });
 
-          res.config.feathers = {
+      it('get', async () => {
+        const errCode = 500;
+        const errMsg = 'server get error';
+        const path = 'remote-server-get-error';
+        const id = 1;
+
+        mock.onGet(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
+          return [
+            errCode,
+            new errors.GeneralError(errMsg)
+          ];
+        });
+
+        const service = app.service(path);
+
+        await service.get(id).then(() => {
+          throw new Error('Should never get here');
+        }).catch(function (error) {
+          expect(error).to.be.ok;
+          expect(error instanceof errors.GeneralError).to.be.ok;
+          expect(error.code).to.equal(errCode);
+          expect(error.message).to.equal(errMsg);
+        });
+      });
+
+      it('create', async () => {
+        const errCode = 500;
+        const errMsg = 'server create error';
+        const path = 'remote-server-create-error';
+
+        mock.onPost(`http://${DEFAULT_HOST}:80/${path}`).reply(function (config) {
+          return [
+            errCode,
+            new errors.GeneralError(errMsg)
+          ];
+        });
+
+        const service = app.service(path);
+
+        await service.create({}).then(() => {
+          throw new Error('Should never get here');
+        }).catch(function (error) {
+          expect(error).to.be.ok;
+          expect(error instanceof errors.GeneralError).to.be.ok;
+          expect(error.code).to.equal(errCode);
+          expect(error.message).to.equal(errMsg);
+        });
+      });
+
+      it('update', async () => {
+        const errCode = 500;
+        const errMsg = 'server update error';
+        const path = 'remote-server-update-error';
+        const id = 1;
+
+        mock.onPut(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
+          return [
+            errCode,
+            new errors.GeneralError(errMsg)
+          ];
+        });
+
+        const service = app.service(path);
+
+        await service.update(id, {}).then(() => {
+          throw new Error('Should never get here');
+        }).catch(function (error) {
+          expect(error).to.be.ok;
+          expect(error instanceof errors.GeneralError).to.be.ok;
+          expect(error.code).to.equal(errCode);
+          expect(error.message).to.equal(errMsg);
+        });
+      });
+
+      it('patch', async () => {
+        const errCode = 500;
+        const errMsg = 'server patch error';
+        const path = 'remote-server-patch-error';
+        const id = 1;
+
+        mock.onPatch(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
+          return [
+            errCode,
+            new errors.GeneralError(errMsg)
+          ];
+        });
+
+        const service = app.service(path);
+
+        await service.patch(id, {}).then(() => {
+          throw new Error('Should never get here');
+        }).catch(function (error) {
+          expect(error).to.be.ok;
+          expect(error instanceof errors.GeneralError).to.be.ok;
+          expect(error.code).to.equal(errCode);
+          expect(error.message).to.equal(errMsg);
+        });
+      });
+
+      it('remove', async () => {
+        const errCode = 500;
+        const errMsg = 'server remove error';
+        const path = 'remote-server-remove-error';
+        const id = 1;
+
+        mock.onDelete(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
+          return [
+            errCode,
+            new errors.GeneralError(errMsg)
+          ];
+        });
+
+        const service = app.service(path);
+
+        await service.remove(id).then(() => {
+          throw new Error('Should never get here');
+        }).catch(function (error) {
+          expect(error).to.be.ok;
+          expect(error instanceof errors.GeneralError).to.be.ok;
+          expect(error.code).to.equal(errCode);
+          expect(error.message).to.equal(errMsg);
+        });
+      });
+    });
+  });
+
+  describe('Utils', () => {
+    describe('handleInternalRequest', () => {
+      it('ignore external call', async () => {
+        const req = {
+          headers: [],
+          feathers: {
             provider: 'rest',
             headers: []
-          };
+          }
+        };
 
-          res.config.headers[INTERNAL_REQUEST_HEADER.toLowerCase()] = res.config.headers[INTERNAL_REQUEST_HEADER];
+        const fromRemote = handleInternalRequest(req);
 
-          const fromRemote = handleInternalRequest(res.config);
-
-          expect(fromRemote).to.equal(true);
-          expect(res.config.feathers.a).to.equal(1);
-          expect(res.config.feathers.b).to.equal(2);
-          expect(res.config.feathers.provider).to.be.undefined;
-          expect(res.config.feathers.headers).to.be.undefined;
-        });
-
-        it('custom internal request header name', async () => {
-          const headerName = 'custom';
-          const service = app.service('remote');
-
-          const res = await service.get(1);
-
-          res.config.feathers = {
-            provider: 'rest',
-            headers: []
-          };
-
-          res.config.headers[headerName] = res.config.headers[INTERNAL_REQUEST_HEADER];
-
-          const fromRemote = handleInternalRequest(res.config, { internalRequestHeader: headerName });
-
-          expect(fromRemote).to.equal(true);
-        });
+        expect(fromRemote).to.equal(false);
       });
 
-      describe('stripSlashes', () => {
-        it('without leading or trailing slashes', async () => {
-          const path = 'test';
+      it('internal call from remote service', async () => {
+        const service = app.service('remote');
 
-          const res = stripSlashes(path);
+        const res = await service.find({ a: 1, b: 2 });
 
-          expect(res).to.equal(path);
-        });
+        res.config.feathers = {
+          provider: 'rest',
+          headers: []
+        };
 
-        it('with leading slashes', async () => {
-          const path = '//test';
+        res.config.headers[INTERNAL_REQUEST_HEADER.toLowerCase()] = res.config.headers[INTERNAL_REQUEST_HEADER];
 
-          const res = stripSlashes(path);
+        const fromRemote = handleInternalRequest(res.config);
 
-          expect(res).to.equal('test');
-        });
-
-        it('with trailing slashes', async () => {
-          const path = 'test//';
-
-          const res = stripSlashes(path);
-
-          expect(res).to.equal('test');
-        });
-
-        it('leading and with trailing slashes', async () => {
-          const path = '//test//';
-
-          const res = stripSlashes(path);
-
-          expect(res).to.equal('test');
-        });
+        expect(fromRemote).to.equal(true);
+        expect(res.config.feathers.a).to.equal(1);
+        expect(res.config.feathers.b).to.equal(2);
+        expect(res.config.feathers.provider).to.be.undefined;
+        expect(res.config.feathers.headers).to.be.undefined;
       });
 
-      describe('pathToHost', () => {
-        it('alphanumeric chars', async () => {
-          const path = 'v1-test';
+      it('custom internal request header name', async () => {
+        const headerName = 'custom';
+        const service = app.service('remote');
 
-          const res = pathToHost(path);
+        const res = await service.get(1);
 
-          expect(res).to.equal(path);
-        });
+        res.config.feathers = {
+          provider: 'rest',
+          headers: []
+        };
 
-        it('alphanumeric and dash chars', async () => {
-          const path = 'v1-test-path';
+        res.config.headers[headerName] = res.config.headers[INTERNAL_REQUEST_HEADER];
 
-          const res = pathToHost(path);
+        const fromRemote = handleInternalRequest(res.config, { internalRequestHeader: headerName });
 
-          expect(res).to.equal(path);
-        });
+        expect(fromRemote).to.equal(true);
+      });
+    });
 
-        it('alphanumeric, dash and slashes chars', async () => {
-          const path = 'v1-test-path/to/host';
+    describe('pathToHost', () => {
+      it('alphanumeric chars', async () => {
+        const path = 'v1-test';
 
-          const res = pathToHost(path);
+        const res = pathToHost(path);
 
-          expect(res).to.equal('v1-test-path-to-host');
-        });
+        expect(res).to.equal(path);
       });
 
-      describe('idToString', () => {
-        it('integer id', async () => {
-          const id = 1;
+      it('alphanumeric and dash chars', async () => {
+        const path = 'v1-test-path';
 
-          const res = idToString(id);
+        const res = pathToHost(path);
 
-          expect(res).to.equal(id);
-        });
+        expect(res).to.equal(path);
+      });
 
-        it('string id', async () => {
-          const id = 'test';
+      it('alphanumeric, dash and slashes chars', async () => {
+        const path = 'v1-test-path/to/host';
 
-          const res = idToString(id);
+        const res = pathToHost(path);
 
-          expect(res).to.equal(id);
-        });
+        expect(res).to.equal('v1-test-path-to-host');
+      });
+    });
 
-        it('array id', async () => {
-          const id = ['test'];
+    describe('idToString', () => {
+      it('integer id', async () => {
+        const id = 1;
 
-          const res = idToString(id);
+        const res = idToString(id);
 
-          expect(res).to.equal('["test"]');
-        });
+        expect(res).to.equal(id);
+      });
 
-        it('object id', async () => {
-          const id = { test: true };
+      it('string id', async () => {
+        const id = 'test';
 
-          const res = idToString(id);
+        const res = idToString(id);
 
-          expect(res).to.equal('{"test":true}');
-        });
+        expect(res).to.equal(id);
+      });
+
+      it('array id', async () => {
+        const id = ['test'];
+
+        const res = idToString(id);
+
+        expect(res).to.equal('["test"]');
+      });
+
+      it('object id', async () => {
+        const id = { test: true };
+
+        const res = idToString(id);
+
+        expect(res).to.equal('{"test":true}');
       });
     });
   });
