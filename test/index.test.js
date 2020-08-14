@@ -894,9 +894,10 @@ describe('Feathers Cassandra service', () => {
 
         res.config.headers[INTERNAL_REQUEST_HEADER.toLowerCase()] = res.config.headers[INTERNAL_REQUEST_HEADER];
 
-        const fromRemote = handleInternalRequest(res.config);
+        const handleRes = handleInternalRequest(res.config);
 
-        expect(fromRemote).to.equal(true);
+        expect(handleRes).to.equal(true);
+        expect(res.config.feathers.fromRemote).to.equal(true);
         expect(res.config.feathers.a).to.equal(1);
         expect(res.config.feathers.b).to.equal(2);
         expect(res.config.feathers.provider).to.be.undefined;
