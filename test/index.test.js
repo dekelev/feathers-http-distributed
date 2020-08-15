@@ -16,7 +16,8 @@ const {
 } = require('../lib/utils');
 const {
   DEFAULT_PROTOCOL,
-  DEFAULT_PORT,
+  DEFAULT_HTTP_PORT,
+  DEFAULT_HTTPS_PORT,
   DEFAULT_TIMEOUT,
   SERVICE_PROTOCOL_HEADER,
   SERVICE_HOST_HEADER,
@@ -252,7 +253,7 @@ describe('Feathers Cassandra service', () => {
         expect(res).to.be.ok;
         expect(res.config.headers[SERVICE_PROTOCOL_HEADER]).to.equal(DEFAULT_PROTOCOL);
         expect(res.config.headers[SERVICE_HOST_HEADER]).to.equal(DEFAULT_HOST);
-        expect(res.config.headers[SERVICE_PORT_HEADER]).to.equal(DEFAULT_PORT);
+        expect(res.config.headers[SERVICE_PORT_HEADER]).to.equal(DEFAULT_HTTP_PORT);
       });
 
       it('sends X-Service request headers when overriding protocol, host & port', async () => {
@@ -338,7 +339,6 @@ describe('Feathers Cassandra service', () => {
     describe('protocol', () => {
       it('with custom protocol', async () => {
         const protocol = 'https';
-        const port = 443;
 
         mock.onGet(`${protocol}://${DEFAULT_HOST}/remote`).reply(function (config) {
           return [
@@ -353,8 +353,7 @@ describe('Feathers Cassandra service', () => {
         const app = feathers()
           .configure(app => distributed(app)({
             ...OPTIONS,
-            protocol,
-            port
+            protocol
           }));
 
         const service = app.service('remote');
@@ -363,6 +362,7 @@ describe('Feathers Cassandra service', () => {
 
         expect(res).to.be.ok;
         expect(res.protocol).to.equal(true);
+        expect(res.config.headers[SERVICE_PORT_HEADER]).to.equal(DEFAULT_HTTPS_PORT);
       });
     });
 
@@ -567,7 +567,7 @@ describe('Feathers Cassandra service', () => {
         expect(res.proxy).to.equal(true);
         expect(res.config.headers[SERVICE_PROTOCOL_HEADER]).to.equal(DEFAULT_PROTOCOL);
         expect(res.config.headers[SERVICE_HOST_HEADER]).to.equal(DEFAULT_HOST);
-        expect(res.config.headers[SERVICE_PORT_HEADER]).to.equal(DEFAULT_PORT);
+        expect(res.config.headers[SERVICE_PORT_HEADER]).to.equal(DEFAULT_HTTP_PORT);
       });
     });
 
