@@ -24,21 +24,24 @@ const {
   INTERNAL_REQUEST_HEADER
 } = require('../lib/constants');
 
-const DEFAULT_HOST = 'undefined';
+const DEFAULT_HOST = 'localhost';
+const OPTIONS = {
+  host: DEFAULT_HOST
+};
 
 describe('Feathers Cassandra service', () => {
   let app;
 
   before(async () => {
     app = feathers()
-      .configure(app => distributed(app)());
+      .configure(app => distributed(app)(OPTIONS));
 
     app.use('/local', memory({}));
 
     const path = 'remote';
     const id = 1;
 
-    mock.onGet(`http://${DEFAULT_HOST}:80/${path}`).reply(function (config) {
+    mock.onGet(`http://${DEFAULT_HOST}/${path}`).reply(function (config) {
       return [
         200,
         {
@@ -48,7 +51,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onGet(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
+    mock.onGet(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
       return [
         200,
         {
@@ -58,7 +61,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onPost(`http://${DEFAULT_HOST}:80/${path}`).reply(function (config) {
+    mock.onPost(`http://${DEFAULT_HOST}/${path}`).reply(function (config) {
       return [
         201,
         {
@@ -68,7 +71,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onPut(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
+    mock.onPut(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
       return [
         200,
         {
@@ -78,7 +81,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onPatch(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
+    mock.onPatch(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
       return [
         200,
         {
@@ -88,7 +91,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onDelete(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
+    mock.onDelete(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
       return [
         200,
         {
@@ -229,6 +232,7 @@ describe('Feathers Cassandra service', () => {
         const internalRequestHeader = 'custom';
         const app = feathers()
           .configure(app => distributed(app)({
+            ...OPTIONS,
             internalRequestHeader
           }));
 
@@ -314,6 +318,7 @@ describe('Feathers Cassandra service', () => {
       it('with excluded param', async () => {
         const app = feathers()
           .configure(app => distributed(app)({
+            ...OPTIONS,
             excludeParams: [
               'excluded'
             ]
@@ -333,8 +338,9 @@ describe('Feathers Cassandra service', () => {
     describe('protocol', () => {
       it('with custom protocol', async () => {
         const protocol = 'https';
+        const port = 443;
 
-        mock.onGet(`${protocol}://${DEFAULT_HOST}:80/remote`).reply(function (config) {
+        mock.onGet(`${protocol}://${DEFAULT_HOST}/remote`).reply(function (config) {
           return [
             200,
             {
@@ -346,7 +352,9 @@ describe('Feathers Cassandra service', () => {
 
         const app = feathers()
           .configure(app => distributed(app)({
-            protocol
+            ...OPTIONS,
+            protocol,
+            port
           }));
 
         const service = app.service('remote');
@@ -362,7 +370,7 @@ describe('Feathers Cassandra service', () => {
       it('with default host', async () => {
         const host = 'localhost';
 
-        mock.onGet(`http://${host}:80/remote`).reply(function (config) {
+        mock.onGet(`http://${host}/remote`).reply(function (config) {
           return [
             200,
             {
@@ -374,6 +382,7 @@ describe('Feathers Cassandra service', () => {
 
         const app = feathers()
           .configure(app => distributed(app)({
+            ...OPTIONS,
             host
           }));
 
@@ -389,7 +398,7 @@ describe('Feathers Cassandra service', () => {
         const path = 'v1-test/service';
         const host = 'v1-test-service';
 
-        mock.onGet(`http://${host}:80/${path}`).reply(function (config) {
+        mock.onGet(`http://${host}/${path}`).reply(function (config) {
           return [
             200,
             {
@@ -416,7 +425,7 @@ describe('Feathers Cassandra service', () => {
         const path = 'v1-test/service';
         const host = 'v1_test_service';
 
-        mock.onGet(`http://${host}:80/${path}`).reply(function (config) {
+        mock.onGet(`http://${host}/${path}`).reply(function (config) {
           return [
             200,
             {
@@ -442,7 +451,7 @@ describe('Feathers Cassandra service', () => {
       it('with DNS suffix', async () => {
         const dnsSuffix = '-svc.local';
 
-        mock.onGet(`http://${DEFAULT_HOST}${dnsSuffix}:80/remote`).reply(function (config) {
+        mock.onGet(`http://${DEFAULT_HOST}${dnsSuffix}/remote`).reply(function (config) {
           return [
             200,
             {
@@ -454,6 +463,7 @@ describe('Feathers Cassandra service', () => {
 
         const app = feathers()
           .configure(app => distributed(app)({
+            ...OPTIONS,
             dnsSuffix
           }));
 
@@ -469,7 +479,7 @@ describe('Feathers Cassandra service', () => {
         const dnsSuffixOption = '-svc.local';
         const dnsSuffixParam = '.local';
 
-        mock.onGet(`http://${DEFAULT_HOST}${dnsSuffixParam}:80/remote`).reply(function (config) {
+        mock.onGet(`http://${DEFAULT_HOST}${dnsSuffixParam}/remote`).reply(function (config) {
           return [
             200,
             {
@@ -481,6 +491,7 @@ describe('Feathers Cassandra service', () => {
 
         const app = feathers()
           .configure(app => distributed(app)({
+            ...OPTIONS,
             dnsSuffix: dnsSuffixOption
           }));
 
@@ -511,6 +522,7 @@ describe('Feathers Cassandra service', () => {
 
         const app = feathers()
           .configure(app => distributed(app)({
+            ...OPTIONS,
             port
           }));
 
@@ -543,6 +555,7 @@ describe('Feathers Cassandra service', () => {
 
         const app = feathers()
           .configure(app => distributed(app)({
+            ...OPTIONS,
             proxy
           }));
 
@@ -573,6 +586,7 @@ describe('Feathers Cassandra service', () => {
 
         const app = feathers()
           .configure(app => distributed(app)({
+            ...OPTIONS,
             timeout
           }));
 
@@ -599,6 +613,7 @@ describe('Feathers Cassandra service', () => {
 
         const app = feathers()
           .configure(app => distributed(app)({
+            ...OPTIONS,
             timeout: timeoutOption
           }));
 
@@ -617,7 +632,7 @@ describe('Feathers Cassandra service', () => {
       const errMsg = 'Network Error';
       const path = 'remote-error';
 
-      mock.onGet(`http://${DEFAULT_HOST}:80/${path}`).networkError();
+      mock.onGet(`http://${DEFAULT_HOST}/${path}`).networkError();
 
       const service = app.service(path);
 
@@ -636,7 +651,7 @@ describe('Feathers Cassandra service', () => {
       const errMsg = 'timeout of 0ms exceeded';
       const path = 'remote-timeout-error';
 
-      mock.onGet(`http://${DEFAULT_HOST}:80/${path}`).timeout();
+      mock.onGet(`http://${DEFAULT_HOST}/${path}`).timeout();
 
       const service = app.service(path);
 
@@ -672,7 +687,7 @@ describe('Feathers Cassandra service', () => {
       const errMsg = 'client error';
       const path = 'remote-client-error';
 
-      mock.onGet(`http://${DEFAULT_HOST}:80/${path}`).reply(function (config) {
+      mock.onGet(`http://${DEFAULT_HOST}/${path}`).reply(function (config) {
         return [
           errCode,
           new errors.BadRequest(errMsg)
@@ -696,7 +711,7 @@ describe('Feathers Cassandra service', () => {
       const errMsg = 'server error';
       const path = 'remote-server-error';
 
-      mock.onGet(`http://${DEFAULT_HOST}:80/${path}`).reply(function (config) {
+      mock.onGet(`http://${DEFAULT_HOST}/${path}`).reply(function (config) {
         return [
           errCode,
           new errors.GeneralError(errMsg)
@@ -721,7 +736,7 @@ describe('Feathers Cassandra service', () => {
         const errMsg = 'server find error';
         const path = 'remote-server-find-error';
 
-        mock.onGet(`http://${DEFAULT_HOST}:80/${path}`).reply(function (config) {
+        mock.onGet(`http://${DEFAULT_HOST}/${path}`).reply(function (config) {
           return [
             errCode,
             new errors.GeneralError(errMsg)
@@ -746,7 +761,7 @@ describe('Feathers Cassandra service', () => {
         const path = 'remote-server-get-error';
         const id = 1;
 
-        mock.onGet(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
+        mock.onGet(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
           return [
             errCode,
             new errors.GeneralError(errMsg)
@@ -770,7 +785,7 @@ describe('Feathers Cassandra service', () => {
         const errMsg = 'server create error';
         const path = 'remote-server-create-error';
 
-        mock.onPost(`http://${DEFAULT_HOST}:80/${path}`).reply(function (config) {
+        mock.onPost(`http://${DEFAULT_HOST}/${path}`).reply(function (config) {
           return [
             errCode,
             new errors.GeneralError(errMsg)
@@ -795,7 +810,7 @@ describe('Feathers Cassandra service', () => {
         const path = 'remote-server-update-error';
         const id = 1;
 
-        mock.onPut(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
+        mock.onPut(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
           return [
             errCode,
             new errors.GeneralError(errMsg)
@@ -820,7 +835,7 @@ describe('Feathers Cassandra service', () => {
         const path = 'remote-server-patch-error';
         const id = 1;
 
-        mock.onPatch(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
+        mock.onPatch(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
           return [
             errCode,
             new errors.GeneralError(errMsg)
@@ -845,7 +860,7 @@ describe('Feathers Cassandra service', () => {
         const path = 'remote-server-remove-error';
         const id = 1;
 
-        mock.onDelete(`http://${DEFAULT_HOST}:80/${path}/${id}`).reply(function (config) {
+        mock.onDelete(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
           return [
             errCode,
             new errors.GeneralError(errMsg)
