@@ -9,6 +9,7 @@
     "feathersjs",
     "distributed",
     "http",
+    "docker",
     "kubernetes",
     "microservices"
   ],
