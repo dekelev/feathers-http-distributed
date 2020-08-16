@@ -1,7 +1,7 @@
 {
   "name": "feathers-http-distributed",
   "description": "Distribute your Feathers services as microservices",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "homepage": "https://github.com/dekelev/feathers-http-distributed",
   "main": "lib/",
   "keywords": [
@@ -46,6 +46,7 @@
   "dependencies": {
     "@feathersjs/errors": "^4.5.7",
     "axios": "^0.19.2",
+    "axios-retry": "^3.1.8",
     "debug": "^4.1.1"
   },
   "devDependencies": {

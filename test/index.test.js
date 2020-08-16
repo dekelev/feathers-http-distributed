@@ -12,16 +12,12 @@ const distributed = require('../lib');
 const {
   handleInternalRequest,
   pathToHost,
-  idToString
+  idToString,
+  getProtocolPort
 } = require('../lib/utils');
 const {
   DEFAULT_PROTOCOL,
-  DEFAULT_HTTP_PORT,
-  DEFAULT_HTTPS_PORT,
   DEFAULT_TIMEOUT,
-  SERVICE_PROTOCOL_HEADER,
-  SERVICE_HOST_HEADER,
-  SERVICE_PORT_HEADER,
   INTERNAL_REQUEST_HEADER
 } = require('../lib/constants');
 
@@ -42,7 +38,7 @@ describe('Feathers Cassandra service', () => {
     const path = 'remote';
     const id = 1;
 
-    mock.onGet(`http://${DEFAULT_HOST}/${path}`).reply(function (config) {
+    mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}`).reply(function (config) {
       return [
         200,
         {
@@ -52,7 +48,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onGet(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
+    mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
       return [
         200,
         {
@@ -62,7 +58,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onPost(`http://${DEFAULT_HOST}/${path}`).reply(function (config) {
+    mock.onPost(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}`).reply(function (config) {
       return [
         201,
         {
@@ -72,7 +68,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onPut(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
+    mock.onPut(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
       return [
         200,
         {
@@ -82,7 +78,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onPatch(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
+    mock.onPatch(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
       return [
         200,
         {
@@ -92,7 +88,7 @@ describe('Feathers Cassandra service', () => {
       ];
     });
 
-    mock.onDelete(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
+    mock.onDelete(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
       return [
         200,
         {
@@ -106,6 +102,13 @@ describe('Feathers Cassandra service', () => {
   describe('Initialization', () => {
     it('is CommonJS compatible', () =>
       assert.strictEqual(typeof require('../lib'), 'function'));
+
+    it('without options', () => {
+      const app = feathers()
+        .configure(app => distributed(app)());
+
+      expect(app).to.be.ok;
+    });
   });
 
   describe('Get service', () => {
@@ -245,43 +248,6 @@ describe('Feathers Cassandra service', () => {
         expect(JSON.parse(res.config.headers[internalRequestHeader]).test).to.equal(true);
       });
 
-      it('sends X-Service request headers', async () => {
-        const service = app.service('remote');
-
-        const res = await service.find({});
-
-        expect(res).to.be.ok;
-        expect(res.config.headers[SERVICE_PROTOCOL_HEADER]).to.equal(DEFAULT_PROTOCOL);
-        expect(res.config.headers[SERVICE_HOST_HEADER]).to.equal(DEFAULT_HOST);
-        expect(res.config.headers[SERVICE_PORT_HEADER]).to.equal(DEFAULT_HTTP_PORT);
-      });
-
-      it('sends X-Service request headers when overriding protocol, host & port', async () => {
-        mock.onGet('https://remote-service.local:8443/remote').reply(function (config) {
-          return [
-            200,
-            {
-              config
-            }
-          ];
-        });
-
-        const service = app.service('remote');
-        const params = {
-          protocol: 'https',
-          host: 'remote',
-          dnsSuffix: '-service.local',
-          port: 8443
-        };
-
-        const res = await service.find(params);
-
-        expect(res).to.be.ok;
-        expect(res.config.headers[SERVICE_PROTOCOL_HEADER]).to.equal(params.protocol);
-        expect(res.config.headers[SERVICE_HOST_HEADER]).to.equal(params.host + params.dnsSuffix);
-        expect(res.config.headers[SERVICE_PORT_HEADER]).to.equal(params.port);
-      });
-
       it('sends custom request header', async () => {
         const service = app.service('remote');
 
@@ -334,6 +300,37 @@ describe('Feathers Cassandra service', () => {
         expect(JSON.parse(res.config.headers[INTERNAL_REQUEST_HEADER]).a).to.equal(1);
         expect(JSON.parse(res.config.headers[INTERNAL_REQUEST_HEADER]).b).to.equal(2);
       });
+
+      it('protocol, host, dnsSuffix & port params', async () => {
+        const protocol = 'https';
+        const host = 'remote';
+        const dnsSuffix = '-service.local';
+        const port = 8443;
+        const path = 'remote';
+
+        mock.onGet(`${protocol}://${host}${dnsSuffix}:${port}/${path}`).reply(function (config) {
+          return [
+            200,
+            {
+              overrideUrl: true,
+              config
+            }
+          ];
+        });
+
+        const service = app.service(path);
+        const params = {
+          protocol,
+          host,
+          dnsSuffix,
+          port
+        };
+
+        const res = await service.find(params);
+
+        expect(res).to.be.ok;
+        expect(res.overrideUrl).to.equal(true);
+      });
     });
 
     describe('protocol', () => {
@@ -362,7 +359,6 @@ describe('Feathers Cassandra service', () => {
 
         expect(res).to.be.ok;
         expect(res.protocol).to.equal(true);
-        expect(res.config.headers[SERVICE_PORT_HEADER]).to.equal(DEFAULT_HTTPS_PORT);
       });
     });
 
@@ -370,7 +366,7 @@ describe('Feathers Cassandra service', () => {
       it('with default host', async () => {
         const host = 'localhost';
 
-        mock.onGet(`http://${host}/remote`).reply(function (config) {
+        mock.onGet(`${DEFAULT_PROTOCOL}://${host}/remote`).reply(function (config) {
           return [
             200,
             {
@@ -398,7 +394,7 @@ describe('Feathers Cassandra service', () => {
         const path = 'v1-test/service';
         const host = 'v1-test-service';
 
-        mock.onGet(`http://${host}/${path}`).reply(function (config) {
+        mock.onGet(`${DEFAULT_PROTOCOL}://${host}/${path}`).reply(function (config) {
           return [
             200,
             {
@@ -425,7 +421,7 @@ describe('Feathers Cassandra service', () => {
         const path = 'v1-test/service';
         const host = 'v1_test_service';
 
-        mock.onGet(`http://${host}/${path}`).reply(function (config) {
+        mock.onGet(`${DEFAULT_PROTOCOL}://${host}/${path}`).reply(function (config) {
           return [
             200,
             {
@@ -451,7 +447,7 @@ describe('Feathers Cassandra service', () => {
       it('with DNS suffix', async () => {
         const dnsSuffix = '-svc.local';
 
-        mock.onGet(`http://${DEFAULT_HOST}${dnsSuffix}/remote`).reply(function (config) {
+        mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}${dnsSuffix}/remote`).reply(function (config) {
           return [
             200,
             {
@@ -479,7 +475,7 @@ describe('Feathers Cassandra service', () => {
         const dnsSuffixOption = '-svc.local';
         const dnsSuffixParam = '.local';
 
-        mock.onGet(`http://${DEFAULT_HOST}${dnsSuffixParam}/remote`).reply(function (config) {
+        mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}${dnsSuffixParam}/remote`).reply(function (config) {
           return [
             200,
             {
@@ -510,7 +506,7 @@ describe('Feathers Cassandra service', () => {
       it('with custom port', async () => {
         const port = 8000;
 
-        mock.onGet(`http://${DEFAULT_HOST}:${port}/remote`).reply(function (config) {
+        mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}:${port}/remote`).reply(function (config) {
           return [
             200,
             {
@@ -536,14 +532,14 @@ describe('Feathers Cassandra service', () => {
     });
 
     describe('proxy', () => {
-      it('request', async () => {
+      it('request with proxy host', async () => {
+        const host = 'app';
+        const path = 'remote-proxy';
         const proxy = {
-          protocol: 'https',
-          host: 'proxy',
-          port: 8000
+          host: 'localhost'
         };
 
-        mock.onGet(`${proxy.protocol}://${proxy.host}:${proxy.port}/remote`).reply(function (config) {
+        mock.onGet(`${DEFAULT_PROTOCOL}://${host}/${path}`).reply(function (config) {
           return [
             200,
             {
@@ -559,15 +555,47 @@ describe('Feathers Cassandra service', () => {
             proxy
           }));
 
-        const service = app.service('remote');
+        const service = app.service(path);
 
-        const res = await service.find({});
+        const res = await service.find({ host });
 
         expect(res).to.be.ok;
         expect(res.proxy).to.equal(true);
-        expect(res.config.headers[SERVICE_PROTOCOL_HEADER]).to.equal(DEFAULT_PROTOCOL);
-        expect(res.config.headers[SERVICE_HOST_HEADER]).to.equal(DEFAULT_HOST);
-        expect(res.config.headers[SERVICE_PORT_HEADER]).to.equal(DEFAULT_HTTP_PORT);
+        expect(res.config.proxy.host).to.equal(proxy.host);
+      });
+
+      it('request with proxy host & port', async () => {
+        const host = 'app';
+        const path = 'remote-proxy-with-port';
+        const proxy = {
+          host: 'localhost',
+          port: 8000
+        };
+
+        mock.onGet(`${DEFAULT_PROTOCOL}://${host}/${path}`).reply(function (config) {
+          return [
+            200,
+            {
+              proxyWithPort: true,
+              config
+            }
+          ];
+        });
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            ...OPTIONS,
+            proxy
+          }));
+
+        const service = app.service(path);
+
+        const res = await service.find({ host });
+
+        expect(res).to.be.ok;
+        expect(res.proxyWithPort).to.equal(true);
+        expect(res.config.proxy.host).to.equal(proxy.host);
+        expect(res.config.proxy.port).to.equal(proxy.port);
       });
     });
 
@@ -625,14 +653,225 @@ describe('Feathers Cassandra service', () => {
         expect(res.config.timeout).to.equal(timeoutParam);
       });
     });
+
+    describe('maxRedirect', () => {
+      it('set no redirects', async () => {
+        const maxRedirects = 0;
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            ...OPTIONS,
+            maxRedirects
+          }));
+
+        const service = app.service('remote');
+
+        const res = await service.get(1);
+
+        expect(res).to.be.ok;
+        expect(res.config.maxRedirects).to.equal(maxRedirects);
+      });
+
+      it('set max 1 redirect', async () => {
+        const maxRedirects = 1;
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            ...OPTIONS,
+            maxRedirects
+          }));
+
+        const service = app.service('remote');
+
+        const res = await service.get(1);
+
+        expect(res).to.be.ok;
+        expect(res.config.maxRedirects).to.equal(maxRedirects);
+      });
+    });
+
+    describe('keepAlive', () => {
+      it('without keep-alive', async () => {
+        const keepAlive = false;
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            ...OPTIONS,
+            keepAlive
+          }));
+
+        const service = app.service('remote');
+
+        const res = await service.get(1);
+
+        expect(res).to.be.ok;
+        expect(res.config.httpAgent).to.be.undefined;
+        expect(res.config.httpsAgent).to.be.undefined;
+      });
+
+      it('with keep-alive', async () => {
+        const keepAlive = true;
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            ...OPTIONS,
+            keepAlive
+          }));
+
+        const service = app.service('remote');
+
+        const res = await service.get(1);
+
+        expect(res).to.be.ok;
+        expect(res.config.httpAgent).to.be.ok;
+        expect(res.config.httpsAgent).to.be.ok;
+        expect(res.config.httpAgent.keepAlive).to.equal(true);
+        expect(res.config.httpsAgent.keepAlive).to.equal(true);
+      });
+    });
+
+    describe('retry', () => {
+      it('retry on network error', async () => {
+        const retry = true;
+        const path = 'retry-network-error';
+
+        mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}`).networkError();
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            ...OPTIONS,
+            retry
+          }));
+
+        const service = app.service(path);
+
+        await service.find({}).then(() => {
+          throw new Error('Should never get here');
+        }).catch(function (error) {
+          expect(error).to.be.ok;
+          expect(error instanceof errors.BadGateway).to.be.ok;
+        });
+      });
+
+      it('retry on timeout error', async () => {
+        const retry = true;
+        const path = 'retry-timeout-error';
+        const errCode = 504;
+
+        mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}`).timeout();
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            ...OPTIONS,
+            retry
+          }));
+
+        const service = app.service(path);
+
+        await service.find({}).then(() => {
+          throw new Error('Should never get here');
+        }).catch(function (error) {
+          expect(error).to.be.ok;
+          expect(error.code).to.equal(errCode);
+        });
+      });
+
+      it('retry on server error', async () => {
+        const retry = true;
+        const path = 'retry-server-error';
+        const errCode = 500;
+
+        mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}`).reply(function (config) {
+          return [
+            errCode,
+            new errors.GeneralError()
+          ];
+        });
+
+        const app = feathers()
+          .configure(app => distributed(app)({
+            ...OPTIONS,
+            retry
+          }));
+
+        const service = app.service(path);
+
+        await service.find({}).then(() => {
+          throw new Error('Should never get here');
+        }).catch(function (error) {
+          expect(error).to.be.ok;
+          expect(error.code).to.equal(errCode);
+        });
+      });
+    });
   });
 
   describe('Error handler', () => {
+    it('invalid protocol error', async () => {
+      const errMsg = 'Invalid protocol a';
+      const path = 'invalid-protocol-error';
+
+      const app = feathers()
+        .configure(app => distributed(app)({
+          ...OPTIONS,
+          protocol: 'a'
+        }));
+
+      const service = app.service(path);
+
+      await service.find({}).then(() => {
+        throw new Error('Should never get here');
+      }).catch(function (error) {
+        expect(error).to.be.ok;
+        expect(error instanceof errors.BadRequest).to.be.ok;
+        expect(error.message).to.equal(errMsg);
+      });
+    });
+
+    it('missing host error', async () => {
+      const errMsg = 'Missing host';
+      const path = 'missing-host-error';
+
+      const app = feathers()
+        .configure(app => distributed(app)());
+
+      const service = app.service(path);
+
+      await service.find({}).then(() => {
+        throw new Error('Should never get here');
+      }).catch(function (error) {
+        expect(error).to.be.ok;
+        expect(error instanceof errors.BadRequest).to.be.ok;
+        expect(error.message).to.equal(errMsg);
+      });
+    });
+
+    it('invalid port error', async () => {
+      const errMsg = 'Invalid port 70000';
+      const path = 'invalid-port-error';
+
+      const app = feathers()
+        .configure(app => distributed(app)({
+          ...OPTIONS,
+          port: 70000
+        }));
+
+      const service = app.service(path);
+
+      await service.find({}).then(() => {
+        throw new Error('Should never get here');
+      }).catch(function (error) {
+        expect(error).to.be.ok;
+        expect(error instanceof errors.BadRequest).to.be.ok;
+        expect(error.message).to.equal(errMsg);
+      });
+    });
+
     it('network error', async () => {
       const errMsg = 'Network Error';
       const path = 'remote-error';
 
-      mock.onGet(`http://${DEFAULT_HOST}/${path}`).networkError();
+      mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}`).networkError();
 
       const service = app.service(path);
 
@@ -651,7 +890,7 @@ describe('Feathers Cassandra service', () => {
       const errMsg = 'timeout of 0ms exceeded';
       const path = 'remote-timeout-error';
 
-      mock.onGet(`http://${DEFAULT_HOST}/${path}`).timeout();
+      mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}`).timeout();
 
       const service = app.service(path);
 
@@ -667,7 +906,7 @@ describe('Feathers Cassandra service', () => {
 
     it('not-found error', async () => {
       const errCode = 404;
-      const errMsg = 'Request failed with status code 404';
+      const errMsg = 'Error';
       const path = 'remote-not-found-error';
 
       const service = app.service(path);
@@ -682,12 +921,34 @@ describe('Feathers Cassandra service', () => {
       });
     });
 
+    it('not-found (mock) error', async () => {
+      const errCode = 404;
+      const path = 'remote-not-found-error';
+
+      mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}`).reply(function (config) {
+        return [
+          errCode,
+          new errors.NotFound()
+        ];
+      });
+
+      const service = app.service(path);
+
+      await service.find({}).then(() => {
+        throw new Error('Should never get here');
+      }).catch(function (error) {
+        expect(error).to.be.ok;
+        expect(error instanceof errors.NotFound).to.be.ok;
+        expect(error.code).to.equal(errCode);
+      });
+    });
+
     it('client error', async () => {
       const errCode = 400;
       const errMsg = 'client error';
       const path = 'remote-client-error';
 
-      mock.onGet(`http://${DEFAULT_HOST}/${path}`).reply(function (config) {
+      mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}`).reply(function (config) {
         return [
           errCode,
           new errors.BadRequest(errMsg)
@@ -711,7 +972,7 @@ describe('Feathers Cassandra service', () => {
       const errMsg = 'server error';
       const path = 'remote-server-error';
 
-      mock.onGet(`http://${DEFAULT_HOST}/${path}`).reply(function (config) {
+      mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}`).reply(function (config) {
         return [
           errCode,
           new errors.GeneralError(errMsg)
@@ -736,7 +997,7 @@ describe('Feathers Cassandra service', () => {
         const errMsg = 'server find error';
         const path = 'remote-server-find-error';
 
-        mock.onGet(`http://${DEFAULT_HOST}/${path}`).reply(function (config) {
+        mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}`).reply(function (config) {
           return [
             errCode,
             new errors.GeneralError(errMsg)
@@ -761,7 +1022,7 @@ describe('Feathers Cassandra service', () => {
         const path = 'remote-server-get-error';
         const id = 1;
 
-        mock.onGet(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
+        mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
           return [
             errCode,
             new errors.GeneralError(errMsg)
@@ -785,7 +1046,7 @@ describe('Feathers Cassandra service', () => {
         const errMsg = 'server create error';
         const path = 'remote-server-create-error';
 
-        mock.onPost(`http://${DEFAULT_HOST}/${path}`).reply(function (config) {
+        mock.onPost(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}`).reply(function (config) {
           return [
             errCode,
             new errors.GeneralError(errMsg)
@@ -810,7 +1071,7 @@ describe('Feathers Cassandra service', () => {
         const path = 'remote-server-update-error';
         const id = 1;
 
-        mock.onPut(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
+        mock.onPut(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
           return [
             errCode,
             new errors.GeneralError(errMsg)
@@ -835,7 +1096,7 @@ describe('Feathers Cassandra service', () => {
         const path = 'remote-server-patch-error';
         const id = 1;
 
-        mock.onPatch(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
+        mock.onPatch(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
           return [
             errCode,
             new errors.GeneralError(errMsg)
@@ -860,7 +1121,7 @@ describe('Feathers Cassandra service', () => {
         const path = 'remote-server-remove-error';
         const id = 1;
 
-        mock.onDelete(`http://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
+        mock.onDelete(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}/${id}`).reply(function (config) {
           return [
             errCode,
             new errors.GeneralError(errMsg)
@@ -995,6 +1256,20 @@ describe('Feathers Cassandra service', () => {
         const res = idToString(id);
 
         expect(res).to.equal('{"test":true}');
+      });
+    });
+
+    describe('getProtocolPort', () => {
+      it('http', async () => {
+        const res = getProtocolPort('http');
+
+        expect(res).to.equal(80);
+      });
+
+      it('https', async () => {
+        const res = getProtocolPort('https');
+
+        expect(res).to.equal(443);
       });
     });
   });
