@@ -14,3 +14,14 @@
 | keepAlive | boolean | `false` | no | Use HTTP persistent connections with HTTP keep-alive. |
 | internalRequestHeader | string | `X-Internal-Request` | no | Name of the request header that is sent with each request to remote service.<br/><br/>This header is used to identify the request as internal and contains the `params` object of the service call. |
 | retry | boolean<br/>object | `false` | no | Retry failed requests on a network error or when receiving 5xx error on an idempotent request (GET, HEAD, OPTIONS, PUT or DELETE).<br/><br/>By default, it will retry failed requests 3 times without delay.<br/><br/>List of all the supported retry options is available [here](https://www.npmjs.com/package/axios-retry#options). |
+
+### Service call params
+
+| Option | Type | Required | Description |
+| --- | :---: | :---: | --- |
+| protocol | string | no | Overrides the `protocol` init option. |
+| host | string | no | Overrides the `host` and `pathToHost` init options. |
+| port | number | no | Overrides the `port` init option. |
+| dnsSuffix | string | no | Overrides the `dnsSuffix` init option. |
+| timeout | number | no | Overrides the `timeout` init option. |
+| proxy | object | no | Overrides the `proxy` init option. |
