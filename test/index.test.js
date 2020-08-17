@@ -26,7 +26,7 @@ describe('Feathers Cassandra service', () => {
 
   before(async () => {
     app = feathers()
-      .configure(app => distributed(app)(OPTIONS));
+      .configure(distributed(OPTIONS));
 
     app.use('/local', memory({}));
 
@@ -100,7 +100,7 @@ describe('Feathers Cassandra service', () => {
 
     it('without options', () => {
       const app = feathers()
-        .configure(app => distributed(app)());
+        .configure(distributed());
 
       expect(app).to.be.ok;
     });
@@ -292,7 +292,7 @@ describe('Feathers Cassandra service', () => {
       it('sends custom internal request header', async () => {
         const internalRequestHeader = 'custom';
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             internalRequestHeader
           }));
@@ -341,7 +341,7 @@ describe('Feathers Cassandra service', () => {
 
       it('with excluded param', async () => {
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             excludeParams: [
               'excluded'
@@ -405,7 +405,7 @@ describe('Feathers Cassandra service', () => {
         });
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             protocol
           }));
@@ -434,7 +434,7 @@ describe('Feathers Cassandra service', () => {
         });
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             host
           }));
@@ -462,7 +462,7 @@ describe('Feathers Cassandra service', () => {
         });
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             pathToHost: true
           }));
 
@@ -489,7 +489,7 @@ describe('Feathers Cassandra service', () => {
         });
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             pathToHost: path => path.replace(/[^a-z0-9]/gi, '_')
           }));
 
@@ -515,7 +515,7 @@ describe('Feathers Cassandra service', () => {
         });
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             dnsSuffix
           }));
@@ -543,7 +543,7 @@ describe('Feathers Cassandra service', () => {
         });
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             dnsSuffix: dnsSuffixOption
           }));
@@ -574,7 +574,7 @@ describe('Feathers Cassandra service', () => {
         });
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             port
           }));
@@ -607,7 +607,7 @@ describe('Feathers Cassandra service', () => {
         });
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             proxy
           }));
@@ -640,7 +640,7 @@ describe('Feathers Cassandra service', () => {
         });
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             proxy
           }));
@@ -670,7 +670,7 @@ describe('Feathers Cassandra service', () => {
         const timeout = 1000;
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             timeout
           }));
@@ -697,7 +697,7 @@ describe('Feathers Cassandra service', () => {
         const timeoutParam = 2000;
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             timeout: timeoutOption
           }));
@@ -716,7 +716,7 @@ describe('Feathers Cassandra service', () => {
         const maxRedirects = 0;
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             maxRedirects
           }));
@@ -733,7 +733,7 @@ describe('Feathers Cassandra service', () => {
         const maxRedirects = 1;
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             maxRedirects
           }));
@@ -752,7 +752,7 @@ describe('Feathers Cassandra service', () => {
         const keepAlive = false;
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             keepAlive
           }));
@@ -770,7 +770,7 @@ describe('Feathers Cassandra service', () => {
         const keepAlive = true;
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             keepAlive
           }));
@@ -795,7 +795,7 @@ describe('Feathers Cassandra service', () => {
         mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}`).networkError();
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             retry
           }));
@@ -818,7 +818,7 @@ describe('Feathers Cassandra service', () => {
         mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/${path}`).timeout();
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             retry
           }));
@@ -846,7 +846,7 @@ describe('Feathers Cassandra service', () => {
         });
 
         const app = feathers()
-          .configure(app => distributed(app)({
+          .configure(distributed({
             ...OPTIONS,
             retry
           }));
@@ -869,7 +869,7 @@ describe('Feathers Cassandra service', () => {
       const path = 'invalid-protocol-error';
 
       const app = feathers()
-        .configure(app => distributed(app)({
+        .configure(distributed({
           ...OPTIONS,
           protocol: 'a'
         }));
@@ -890,7 +890,7 @@ describe('Feathers Cassandra service', () => {
       const path = 'missing-host-error';
 
       const app = feathers()
-        .configure(app => distributed(app)());
+        .configure(distributed());
 
       const service = app.service(path);
 
@@ -908,7 +908,7 @@ describe('Feathers Cassandra service', () => {
       const path = 'invalid-port-error';
 
       const app = feathers()
-        .configure(app => distributed(app)({
+        .configure(distributed({
           ...OPTIONS,
           port: 70000
         }));
