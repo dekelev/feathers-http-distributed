@@ -31,8 +31,27 @@ app.configure(distributed({}));
 | excludeParams | string[] | `null` | no | List of keys to exclude from the `params` object of the remote service call before sending the request. |
 | maxRedirects | number | `5` | no | Maximum redirects to follow.<br/><br/>Set to `0` to disable redirects. |
 | keepAlive | boolean | `false` | no | Use HTTP persistent connections with HTTP keep-alive. |
-| internalRequestHeader | string | `X-Internal-Request` | no | Name of the request header that is sent with each request to remote service.<br/><br/>This header is used to identify the request as internal and contains the `params` object of the service call. |
+| internalRequestHeader | string | `X-Internal-Request` | no | Name of the request header that is sent with each request to remote service.<br/><br/>This header is used to identify the request as internal and contains the `params` object of the service call.<br/><br/>**Add rule in your external API Gateway or load-balancer to remove this header from all incoming requests.** |
 | retry | boolean<br/>object | `false` | no | Retry failed requests on a network error or when receiving 5xx error on an idempotent request (GET, HEAD, OPTIONS, PUT or DELETE).<br/><br/>By default, it will retry failed requests 3 times without delay.<br/><br/>List of all the supported retry options is available [here](https://www.npmjs.com/package/axios-retry#options). |
+
+### Call remote service
+
+```js
+const result = await app.service('remote').find({});
+
+const result = await app.service('remote').find({ host: 'remote-app' });
+```
+
+##### Params
+
+| Option | Type | Required | Description |
+| --- | :---: | :---: | --- |
+| protocol | string | no | Overrides the `protocol` init option. |
+| host | string | no | Overrides the `host` and `pathToHost` init options. |
+| port | number | no | Overrides the `port` init option. |
+| dnsSuffix | string | no | Overrides the `dnsSuffix` init option. |
+| timeout | number | no | Overrides the `timeout` init option. |
+| proxy | object | no | Overrides the `proxy` init option. |
 
 ### Middleware
 
@@ -54,25 +73,9 @@ app.use((req, res, next) => {
 });
 ```
 
+### Security
 
-### Call remote service
-
-```js
-const result = await app.service('remote').find({});
-
-const result = await app.service('remote').find({ host: 'remote-app' });
-```
-
-##### Params
-
-| Option | Type | Required | Description |
-| --- | :---: | :---: | --- |
-| protocol | string | no | Overrides the `protocol` init option. |
-| host | string | no | Overrides the `host` and `pathToHost` init options. |
-| port | number | no | Overrides the `port` init option. |
-| dnsSuffix | string | no | Overrides the `dnsSuffix` init option. |
-| timeout | number | no | Overrides the `timeout` init option. |
-| proxy | object | no | Overrides the `proxy` init option. |
+Secure your network by adding a rule in your external API Gateway or load-balancer to remove the `X-Internal-Request` request header from all the incoming requests.
 
 ### Debug logs
 
