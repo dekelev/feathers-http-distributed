@@ -55,9 +55,9 @@ const result = await app.service('remote').find({ host: 'remote-app' });
 
 ### Middleware
 
-Use the `handleInternalRequest` method to handle and detect when an incoming HTTP request originated from a remote FeathersJS app.
+Use the `handleInternalRequest` method to detect and handle incoming HTTP requests from remote FeathersJS apps.
   
-When `handleInternalRequest` returns `true`, skip any further custom middlewares that should run on an external HTTP request.
+When `handleInternalRequest` returns `true`, skip any further custom middlewares that should only apply to external HTTP requests.
 
 ```js
 const { handleInternalRequest } = require('feathers-http-distributed');
