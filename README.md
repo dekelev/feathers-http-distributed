@@ -86,4 +86,4 @@ Tools like [Telepresence](https://www.telepresence.io/) can help you locally deb
 
 If you use the `proxy` option, then you can simply run Telepresence with the [`inject-tcp` proxying method](https://www.telepresence.io/reference/methods.html) and debug your FeathersJS app as you normally do.
 
-See [here](https://github.com/dekelev/kong-transparent-proxy) for example of applying transparent HTTP proxy in Kubernetes. 
+See [here](https://github.com/dekelev/kong-transparent-proxy) for example of deploying transparent HTTP proxy with Docker.
