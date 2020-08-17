@@ -1,4 +1,15 @@
-### Init Options
+Distribute FeathersJS services over the network with HTTP inter-communication. 
+
+### Init
+
+```js
+const distributed = require('feathers-http-distributed');
+const app = express(feathers());
+
+app.configure(distributed({}));
+```
+
+##### Options
 
 | Option | Type | Default | Required | Description |
 | --- |:---: | :---: | :---: | --- |
@@ -15,7 +26,36 @@
 | internalRequestHeader | string | `X-Internal-Request` | no | Name of the request header that is sent with each request to remote service.<br/><br/>This header is used to identify the request as internal and contains the `params` object of the service call. |
 | retry | boolean<br/>object | `false` | no | Retry failed requests on a network error or when receiving 5xx error on an idempotent request (GET, HEAD, OPTIONS, PUT or DELETE).<br/><br/>By default, it will retry failed requests 3 times without delay.<br/><br/>List of all the supported retry options is available [here](https://www.npmjs.com/package/axios-retry#options). |
 
-### Service call params
+### Middleware
+
+Use the `handleInternalRequest` method to handle and detect when an incoming HTTP request originated from a remote FeathersJS app.
+  
+When `handleInternalRequest` returns `true`, skip any further custom middlewares that should run on an external HTTP request.
+
+```js
+const { handleInternalRequest } = require('feathers-http-distributed');
+
+app.use((req, res, next) => {
+  if (handleInternalRequest(req)) {
+    next();
+
+    return;
+  }
+
+  // Add here custom middlewares that only applies to external HTTP requests
+});
+```
+
+
+### Call remote service
+
+```js
+const result = await app.service('remote').find({});
+
+const result = await app.service('remote').find({ host: 'remote-app' });
+```
+
+##### Params
 
 | Option | Type | Required | Description |
 | --- | :---: | :---: | --- |
@@ -25,3 +65,17 @@
 | dnsSuffix | string | no | Overrides the `dnsSuffix` init option. |
 | timeout | number | no | Overrides the `timeout` init option. |
 | proxy | object | no | Overrides the `proxy` init option. |
+
+### Debug logs
+
+Debug logs can be enabled by settings the `DEBUG` environment variable to `feathers-http-distributed*,axios`.
+
+### Debugging in Kubernetes
+
+You can use the `proxy` option to send internal traffic for remote services into Kubernetes clusters via transparent HTTP proxies.
+
+Tools like [Telepresence](https://www.telepresence.io/) can help you locally debug traffic coming into Kubernetes pods running FeathersJS apps in local or remote clusters.
+
+If you use the `proxy` option to debug traffic into the Kubernetes cluster, then you can simply use the `--inject-tcp` option in Telepresence and run the FeathersJS app in debug mode as you normally do.
+
+See [here](https://github.com/dekelev/kong-transparent-proxy) for example of applying transparent HTTP proxy in Kubernetes. 
