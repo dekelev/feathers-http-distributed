@@ -11,4 +11,4 @@
 | maxRedirects | number | `5` | no | Maximum redirects to follow.<br/><br/>Set to `0` to disable redirects. |
 | keepAlive | boolean | `false` | no | Use HTTP persistent connections with HTTP keep-alive. |
 | internalRequestHeader | string | `X-Internal-Request` | no | Name of the request header that is sent with each request to remote service.<br/><br/>This header is used to identify the request as internal and contains the `params` object of the service call. |
-| retry | boolean<br/>object | `null` | no | Retry failed requests.<br/><br/>If set to `true`, by default, it will retry failed requests 3 times without delay.<br/><br/>List of all the supported retry options is available [here](https://www.npmjs.com/package/axios-retry#options). |
+| retry | boolean<br/>object | `null` | no | Retry failed requests on a network error or when receiving 5xx error on an idempotent request (GET, HEAD, OPTIONS, PUT or DELETE).<br/><br/>By default, it will retry failed requests 3 times without delay.<br/><br/>List of all the supported retry options is available [here](https://www.npmjs.com/package/axios-retry#options). |
