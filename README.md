@@ -1,4 +1,4 @@
-Distribute FeathersJS services over the network with HTTP inter-communication. 
+Distribute FeathersJS apps over the network with inter-service communication using HTTP protocol.
 
 ### Init
 
@@ -76,6 +76,6 @@ You can use the `proxy` option to send internal traffic for remote services into
 
 Tools like [Telepresence](https://www.telepresence.io/) can help you locally debug traffic coming into Kubernetes pods running FeathersJS apps in local or remote clusters.
 
-If you use the `proxy` option to debug traffic into the Kubernetes cluster, then you can simply use the `--inject-tcp` option in Telepresence and run the FeathersJS app in debug mode as you normally do.
+If you use the `proxy` option, then you can simply run Telepresence with the [`inject-tcp` proxying method](https://www.telepresence.io/reference/methods.html) and debug your FeathersJS app as you normally do.
 
 See [here](https://github.com/dekelev/kong-transparent-proxy) for example of applying transparent HTTP proxy in Kubernetes. 
