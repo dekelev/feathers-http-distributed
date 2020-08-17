@@ -1,7 +1,7 @@
 ### Init Options
 
 | Option | Type | Default | Required | Description |
-| --- |--- | --- | --- | --- |
+| --- |:---: | :---: | :---: | --- |
 | protocol | string | `'http'` | no | Protocol to use when calling remote services.<br/><br/>Supported protocols are `http` & `https`. |
 | host | string | `null` | no | Default hostname to use when calling remote services. |
 | port | number | `80` | no | Port number to use when calling remote services.<br/><br/>Defaults to the default port of the selected protocol. |
