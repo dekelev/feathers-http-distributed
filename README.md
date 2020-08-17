@@ -1,3 +1,11 @@
+# feathers-http-distributed
+
+[![Build Status](https://travis-ci.org/dekelev/feathers-http-distributed.svg?branch=master)](https://travis-ci.org/dekelev/feathers-http-distributed)
+[![Coverage Status](https://coveralls.io/repos/github/dekelev/feathers-http-distributed/badge.svg?branch=master)](https://coveralls.io/github/dekelev/feathers-http-distributed?branch=master)
+[![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=flat-square)](https://github.com/standard/semistandard)
+[![Dependency Status](https://img.shields.io/david/dekelev/feathers-http-distributed.svg)](https://david-dm.org/dekelev/feathers-http-distributed)
+[![npm](https://img.shields.io/npm/v/feathers-http-distributed.svg?maxAge=3600)](https://www.npmjs.com/package/feathers-http-distributed)
+
 Distribute FeathersJS apps over the network with inter-service communication using HTTP protocol.
 
 ### Init
