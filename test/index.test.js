@@ -9,12 +9,7 @@ const axios = require('axios');
 const MockAdapter = require('axios-mock-adapter');
 const mock = new MockAdapter(axios);
 const distributed = require('../lib');
-const {
-  handleInternalRequest,
-  pathToHost,
-  idToString,
-  getProtocolPort
-} = require('../lib/utils');
+const handleInternalRequest = require('../lib/middleware');
 const {
   DEFAULT_PROTOCOL,
   DEFAULT_TIMEOUT,
@@ -213,6 +208,68 @@ describe('Feathers Cassandra service', () => {
   });
 
   describe('Request', () => {
+    describe('idToString', () => {
+      it('integer id', async () => {
+        const id = 1;
+        const service = app.service('remote');
+
+        const res = await service.get(id);
+
+        expect(res).to.be.ok;
+        expect(res.get).to.equal(true);
+      });
+
+      it('string id', async () => {
+        const id = '1';
+        const service = app.service('remote');
+
+        const res = await service.get(id);
+
+        expect(res).to.be.ok;
+        expect(res.get).to.equal(true);
+      });
+
+      it('array id', async () => {
+        const id = ['a', 'b'];
+        const service = app.service('remote');
+
+        mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/remote/${JSON.stringify(id)}`).reply(function (config) {
+          return [
+            200,
+            {
+              arrayId: true,
+              config
+            }
+          ];
+        });
+
+        const res = await service.get(id);
+
+        expect(res).to.be.ok;
+        expect(res.arrayId).to.equal(true);
+      });
+
+      it('object id', async () => {
+        const id = { a: 1, b: 2 };
+        const service = app.service('remote');
+
+        mock.onGet(`${DEFAULT_PROTOCOL}://${DEFAULT_HOST}/remote/${JSON.stringify(id)}`).reply(function (config) {
+          return [
+            200,
+            {
+              objectId: true,
+              config
+            }
+          ];
+        });
+
+        const res = await service.get(id);
+
+        expect(res).to.be.ok;
+        expect(res.objectId).to.equal(true);
+      });
+    });
+
     describe('headers', () => {
       it('sends JSON Content-Type request header', async () => {
         const service = app.service('remote');
@@ -1142,7 +1199,7 @@ describe('Feathers Cassandra service', () => {
     });
   });
 
-  describe('Utils', () => {
+  describe('Middleware', () => {
     describe('handleInternalRequest', () => {
       it('ignore external call', async () => {
         const req = {
@@ -1196,80 +1253,6 @@ describe('Feathers Cassandra service', () => {
         const fromRemote = handleInternalRequest(res.config, { internalRequestHeader: headerName });
 
         expect(fromRemote).to.equal(true);
-      });
-    });
-
-    describe('pathToHost', () => {
-      it('alphanumeric chars', async () => {
-        const path = 'v1-test';
-
-        const res = pathToHost(path);
-
-        expect(res).to.equal(path);
-      });
-
-      it('alphanumeric and dash chars', async () => {
-        const path = 'v1-test-path';
-
-        const res = pathToHost(path);
-
-        expect(res).to.equal(path);
-      });
-
-      it('alphanumeric, dash and slashes chars', async () => {
-        const path = 'v1-test-path/to/host';
-
-        const res = pathToHost(path);
-
-        expect(res).to.equal('v1-test-path-to-host');
-      });
-    });
-
-    describe('idToString', () => {
-      it('integer id', async () => {
-        const id = 1;
-
-        const res = idToString(id);
-
-        expect(res).to.equal(id);
-      });
-
-      it('string id', async () => {
-        const id = 'test';
-
-        const res = idToString(id);
-
-        expect(res).to.equal(id);
-      });
-
-      it('array id', async () => {
-        const id = ['test'];
-
-        const res = idToString(id);
-
-        expect(res).to.equal('["test"]');
-      });
-
-      it('object id', async () => {
-        const id = { test: true };
-
-        const res = idToString(id);
-
-        expect(res).to.equal('{"test":true}');
-      });
-    });
-
-    describe('getProtocolPort', () => {
-      it('http', async () => {
-        const res = getProtocolPort('http');
-
-        expect(res).to.equal(80);
-      });
-
-      it('https', async () => {
-        const res = getProtocolPort('https');
-
-        expect(res).to.equal(443);
       });
     });
   });
