@@ -83,10 +83,10 @@ Debug logs can be enabled by settings the `DEBUG` environment variable to `feath
 
 ### Debugging in Kubernetes
 
-You can use the `proxy` option to send internal traffic for remote services into Kubernetes clusters via transparent HTTP proxies.
+The `proxy` option can be used to forward requests from a FeathersJS app running locally to remote services inside Kubernetes clusters with the help of transparent HTTP proxies.
 
-Tools like [Telepresence](https://www.telepresence.io/) can help you locally debug traffic coming into Kubernetes pods running FeathersJS apps in local or remote clusters.
+Tools like [Telepresence](https://www.telepresence.io/) helps with debugging incoming traffic that goes into Kubernetes pods, by swapping the pods with proxy pods and redirects incoming traffic to a local port on the host.
 
-If you use the `proxy` option, then you can simply run Telepresence with the [`inject-tcp` proxying method](https://www.telepresence.io/reference/methods.html) and debug your FeathersJS app as you normally do.
+With the `proxy` option set, you can simply run [Telepresence](https://www.telepresence.io/) with the [`inject-tcp` proxying method](https://www.telepresence.io/reference/methods.html) and debug your FeathersJS app as you normally do.
 
 See [here](https://github.com/dekelev/kong-transparent-proxy) for example of deploying transparent HTTP proxy with Docker.
