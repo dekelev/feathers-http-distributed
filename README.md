@@ -9,7 +9,7 @@
 | pathToHost | boolean<br/>function | `false` | no | If `host` is not set, path will be converted into `host` by replacing all the non-alphanumeric characters to `-`.<br/><br/>Can also be set with a custom method that receives a path and returns a `host`. |
 | timeout | number | `0` | no | Request timeout in milliseconds.<br/><br/>Set to `0` to disable timeout.<br/><br/>If timeout is enabled, by default, it will include the time spent on retries. |
 | proxy | object | `null` | no | Transparent HTTP proxy to forward requests to remote services.<br/><br/>Set the `proxy` object with `host` & `port`.<br/><br/>If proxy authentication is required, set the `auth` key with object containing the `username` & `password` keys. |
-| excludeParams | string[] | `[]` | no | Keys to exclude from the `params` object of the remote service call before sending the request. |
+| excludeParams | string[] | `null` | no | List of keys to exclude from the `params` object of the remote service call before sending the request. |
 | maxRedirects | number | `5` | no | Maximum redirects to follow.<br/><br/>Set to `0` to disable redirects. |
 | keepAlive | boolean | `false` | no | Use HTTP persistent connections with HTTP keep-alive. |
 | internalRequestHeader | string | `X-Internal-Request` | no | Name of the request header that is sent with each request to remote service.<br/><br/>This header is used to identify the request as internal and contains the `params` object of the service call. |
