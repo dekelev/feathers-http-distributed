@@ -8,11 +8,19 @@
 
 Distribute FeathersJS apps over the network with inter-service communication using HTTP protocol.
 
+### Install
+
+```bash
+npm install --save feathers-http-distributed
+```
+
 ### Init
 
 ```js
+const feathers = require('@feathersjs/feathers');
 const distributed = require('feathers-http-distributed');
-const app = express(feathers());
+
+const app = feathers();
 
 app.configure(distributed({}));
 ```
