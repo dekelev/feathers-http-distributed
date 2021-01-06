@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "@feathersjs/errors": "^4.5.7",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "axios-retry": "^3.1.8",
     "debug": "^4.1.1"
   },
