@@ -1,7 +1,7 @@
 {
   "name": "feathers-http-distributed",
   "description": "Distribute FeathersJS apps over the network with inter-service communication using HTTP protocol",
-  "version": "0.9.3",
+  "version": "1.0.0",
   "homepage": "https://github.com/dekelev/feathers-http-distributed",
   "main": "lib/",
   "keywords": [
