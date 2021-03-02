@@ -44,20 +44,20 @@
     "lib": "lib"
   },
   "dependencies": {
-    "@feathersjs/errors": "^4.5.7",
-    "axios": "^0.19.2",
-    "axios-retry": "^3.1.8",
-    "debug": "^4.1.1"
+    "@feathersjs/errors": "^4.5.11",
+    "axios": "^0.21.1",
+    "axios-retry": "^3.1.9",
+    "debug": "^4.3.1"
   },
   "devDependencies": {
-    "@feathersjs/feathers": "^4.5.8",
-    "axios-mock-adapter": "^1.18.2",
-    "chai": "^4.2.0",
+    "@feathersjs/feathers": "^4.5.11",
+    "axios-mock-adapter": "^1.19.0",
+    "chai": "^4.3.0",
     "coveralls": "^3.1.0",
     "feathers-memory": "^4.1.0",
-    "mocha": "^8.1.1",
+    "mocha": "^8.3.0",
     "nyc": "^15.1.0",
-    "semistandard": "^14.2.3"
+    "semistandard": "^16.0.0"
   },
   "semistandard": {
     "env": [
