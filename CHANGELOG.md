@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.0.1](https://github.com/dekelev/feathers-http-distributed/tree/v1.0.1) (2021-03-30)
+
+[Full Changelog](https://github.com/dekelev/feathers-http-distributed/compare/v1.0.0...v1.0.1)
+
+**Closed issues:**
+
+- Upgrade axios for high severity vulnerability [\#1](https://github.com/dekelev/feathers-http-distributed/issues/1)
+
 ## [v1.0.0](https://github.com/dekelev/feathers-http-distributed/tree/v1.0.0) (2021-03-02)
 
 [Full Changelog](https://github.com/dekelev/feathers-http-distributed/compare/v0.9.3...v1.0.0)
