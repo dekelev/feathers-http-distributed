@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.0.2](https://github.com/dekelev/feathers-http-distributed/tree/v1.0.2) (2021-03-30)
+
+[Full Changelog](https://github.com/dekelev/feathers-http-distributed/compare/v1.0.1...v1.0.2)
+
+**Merged pull requests:**
+
+- Bump y18n from 4.0.0 to 4.0.1 [\#3](https://github.com/dekelev/feathers-http-distributed/pull/3) ([dependabot[bot]](https://github.com/apps/dependabot))
+
 ## [v1.0.1](https://github.com/dekelev/feathers-http-distributed/tree/v1.0.1) (2021-03-30)
 
 [Full Changelog](https://github.com/dekelev/feathers-http-distributed/compare/v1.0.0...v1.0.1)
