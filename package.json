@@ -47,17 +47,17 @@
     "@feathersjs/errors": "^4.5.11",
     "axios": "^0.21.1",
     "axios-retry": "^3.1.9",
-    "debug": "^4.3.1"
+    "debug": "^4.3.2"
   },
   "devDependencies": {
     "@feathersjs/feathers": "^4.5.11",
     "axios-mock-adapter": "^1.19.0",
     "chai": "^4.3.4",
-    "coveralls": "^3.1.0",
+    "coveralls": "^3.1.1",
     "feathers-memory": "^4.1.0",
-    "mocha": "^8.3.2",
+    "mocha": "^8.4.0",
     "nyc": "^15.1.0",
-    "semistandard": "^16.0.0"
+    "semistandard": "^16.0.1"
   },
   "semistandard": {
     "env": [
