@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased](https://github.com/dekelev/feathers-http-distributed/tree/HEAD)
+
+[Full Changelog](https://github.com/dekelev/feathers-http-distributed/compare/v1.0.3...HEAD)
+
+**Merged pull requests:**
+
+- Bump glob-parent from 5.1.1 to 5.1.2 [\#6](https://github.com/dekelev/feathers-http-distributed/pull/6) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump hosted-git-info from 2.8.8 to 2.8.9 [\#5](https://github.com/dekelev/feathers-http-distributed/pull/5) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Bump lodash from 4.17.20 to 4.17.21 [\#4](https://github.com/dekelev/feathers-http-distributed/pull/4) ([dependabot[bot]](https://github.com/apps/dependabot))
+
+## [v1.0.3](https://github.com/dekelev/feathers-http-distributed/tree/v1.0.3) (2021-07-10)
+
+[Full Changelog](https://github.com/dekelev/feathers-http-distributed/compare/v1.0.2...v1.0.3)
+
 ## [v1.0.2](https://github.com/dekelev/feathers-http-distributed/tree/v1.0.2) (2021-03-30)
 
 [Full Changelog](https://github.com/dekelev/feathers-http-distributed/compare/v1.0.1...v1.0.2)
