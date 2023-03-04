@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.1.0](https://github.com/dekelev/feathers-http-distributed/tree/v1.1.0) (2023-03-04)
+
+[Full Changelog](https://github.com/dekelev/feathers-http-distributed/compare/v1.0.4...v1.1.0)
+
 ## [v1.0.4](https://github.com/dekelev/feathers-http-distributed/tree/v1.0.4) (2022-01-15)
 
 [Full Changelog](https://github.com/dekelev/feathers-http-distributed/compare/v1.0.3...v1.0.4)
